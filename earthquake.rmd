@@ -1,0 +1,147 @@
+---
+title: "A study on global Earthquake data between 1965 and 2016"
+author: "Aritra Chatterjee"
+date: "11 February 2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Earthquake magnitude of 7 points on Richter Scale from 1965-2016
+
+This article is an attempt to make .gif file on earthquake data from 1965-2016. It is better to plot yearwise global sesmic activity rather than a static look of all the values on the map.
+
+## Get the Data
+
+The data set for earthquake is available on [kaggle](https://www.kaggle.com/usgs/earthquake-database). The data set contains data for global sesmic activity from 1965 to 2016. Please visit the above link and scroll down to get the .csv file.
+
+## Data Manipulation
+
+From the .csv file we have only selected few parameters for the sake of simplified calculation. 
+* **Date**      
+* **Time**
+* **Latitude**  
+* **Longitude**
+* **Type** is the type of sesmic activity
+* **Depth** is the distance of the epicenter from the seal level.
+* **Magnitude** is the reading on the richter scale
+* **ID** is the event ID of the sesmic activity
+
+Please install packages like *ggmap*,*gganimate*,*dplyr*. Please ensure that your system is preloaded with Image Magick s/w in system program files folder. You may download and install the same from [Image Magick](https://www.imagemagick.org/download/binaries/ImageMagick-7.0.4-7-Q16-x64-static.exe)
+
+We are all set to start with codes in **RStudio**
+
+##R Codes
+
+```{}
+## Read the datatset and load the necessary packages
+library(dplyr)
+library(ggmap)
+library(ggplot2)
+library(gganimate)
+EQ=read.csv("eq.csv",stringsAsFactors = FALSE)
+names(EQ)
+## Only Select the data with magnitude greater than or equal to 7.
+EQ<-EQ%>%filter(Magnitude>=7)
+
+```
+
+```{r,echo=FALSE}
+## Read the datatset and load the necessary packages
+library(dplyr)
+library(ggmap)
+library(ggplot2)
+library(gganimate)
+EQ=read.csv("eq.csv",stringsAsFactors = FALSE)
+names(EQ)
+## Only Select the data with magnitude greater than or equal to 7.
+EQ<-EQ%>%filter(Magnitude>=7)
+
+```
+
+## Split the Date into year,month and date
+
+```{}
+## Convert the dates into character in order to split the coloumn into dd mm yy columns
+EQ$Date<-as.character(EQ$Date)
+list<-strsplit(EQ$Date,"-")
+## Convert the list intok dataframe
+library(plyr)
+EQ_Date1<-ldply(list)
+colnames(EQ_Date1)<-c("Day","Month","Year")
+
+## Column bind with the main dataframe
+EQ<-cbind(EQ,EQ_Date1)
+names(EQ)
+## Change the Date to numeric
+EQ$Year=as.numeric(EQ$Year)
+
+## Get the world map for plot and load the necessary package
+library(ggmap)
+world<-map_data("world")
+world <- world[world$region != "Antarctica",]
+map<-ggplot()+geom_map(data=world,map=world,aes(x=long,y=lat,map_id=region),color='#333300',fill='#663300')
+
+## Make the data frame year wise
+
+EQ<-EQ[order(EQ$Year),]
+Y1<-seq(from=1965,to=2015, by=5)
+
+## Make a legend column
+
+#Plot points on world Map
+
+p <- map + geom_point(data = EQ, aes(x = Longitude, y = Latitude, 
+                                             frame = Year, 
+                                            cumulative = TRUE,size=EQ$Magnitude), alpha = 0.3, 
+                      size = 2.5,color="#336600")+
+  geom_jitter(width = 0.1) +labs(title = "Earthquake above 6 point on richter scale")+theme_void()
+
+#Make Flood GIF
+
+gganimate(p)
+
+```
+
+```{r,echo=FALSE}
+## Convert the dates into character in order to split the coloumn into dd mm yy columns
+EQ$Date<-as.character(EQ$Date)
+list<-strsplit(EQ$Date,"-")
+## Convert the list intok dataframe
+library(plyr)
+EQ_Date1<-ldply(list)
+colnames(EQ_Date1)<-c("Day","Month","Year")
+
+## Column bind with the main dataframe
+EQ<-cbind(EQ,EQ_Date1)
+names(EQ)
+## Change the Date to numeric
+EQ$Year=as.numeric(EQ$Year)
+
+## Get the world map for plot and load the necessary package
+library(ggmap)
+world<-map_data("world")
+world <- world[world$region != "Antarctica",]
+map<-ggplot()+geom_map(data=world,map=world,aes(x=long,y=lat,map_id=region),color='#333300',fill='#663300')
+
+## Make the data frame year wise
+
+EQ<-EQ[order(EQ$Year),]
+Y1<-seq(from=1965,to=2015, by=5)
+
+## Make a legend column
+
+#Plot points on world Map
+
+p <- map + geom_point(data = EQ, aes(x = Longitude, y = Latitude, 
+                                             frame = Year, 
+                                            cumulative = TRUE,size=EQ$Magnitude), alpha = 0.3, 
+                      size = 2.5,color="#336600")+
+  geom_jitter(width = 0.1) +labs(title = "Earthquake above 6 point on richter scale")+theme_void()
+
+
+```
+
+![Earthquake](earthquake2.gif)
