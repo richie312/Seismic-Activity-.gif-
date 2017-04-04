@@ -1,0 +1,171 @@
+---
+title: "A study on global Seismic Activity between 1965 and 2016"
+author: "Aritra Chatterjee"
+date: "11 February 2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+##Introduction
+
+This article is an attempt to make .gif[Graphics Interchangeable format](https://en.wikipedia.org/wiki/GIF) to plot the time series data on one plot using animation.This makes the plot comparable over time for specific set of parameters. In other words, it is easy to understart and see the growth of certain parameter over time.
+
+For instance, relationship between the gpd and life expectancy can be comapred among the nations over time as shown in the below .gif file,
+
+![GDP vs Life Expectancy](C:/Users/ACER PC/Documents/R_Projects/gdp.gif)
+
+
+The recent development of gganimate package had made this possible and easier. By the end of this article you will be able to make your own .gif file and create your own customeised frame to compare the different parameter on global or local scale.
+
+##Pre-requisite
+
+Please install packages like 
+
+*  **ggmap**
+*  **gganimate**
+*  **dplyr**
+*  **animation**
+
+##Software
+
+* **Image Magick**
+
+Please ensure that your system is preloaded with Image Magick s/w in system program files folder. You may download and install the same from [Image Magick](https://www.imagemagick.org/download/binaries/ImageMagick-7.0.4-7-Q16-x64-static.exe)
+
+##Get the Data
+
+This article is an attempt to make .gif file on earthquake data from 1965-2016. It is better to plot yearwise global sesmic activity rather than a static look of all the values on the map. The data set for earthquake is available on [kaggle](https://www.kaggle.com/usgs/earthquake-database). The data set contains data for global sesmic activity from 1965 to 2016. Please visit the above link and scroll down to get the .csv file.
+
+
+
+###Earthquake magnitude of 7 points on Richter Scale from 1965-2016###
+
+The dataset had been modified and only seismic value of 7 points on richter scale hd been considered for the study.
+
+##Data Manipulation
+
+From the .csv file we have only selected few parameters for the sake of simplified calculation. 
+
+*  **Date**      
+*  **Time**
+*  **Latitude**  
+*  **Longitude**
+*  **Type** is the type of sesmic activity
+*  **Depth** is the distance of the epicenter from the seal level.
+*  **Magnitude** is the reading on the richter scale
+*  **ID** is the event ID of the sesmic activity
+
+
+We are all set to start with codes in **RStudio**
+
+##R Codes##
+
+```{}
+## Read the datatset and load the necessary packages
+library(plyr)
+library(dplyr)
+library(ggmap)
+library(ggplot2)
+library(gganimate)
+EQ=read.csv("eq.csv",stringsAsFactors = FALSE)
+names(EQ)
+## Only Select the data with magnitude greater than or equal to 7.
+EQ<-EQ%>%filter(Magnitude>=7)
+
+```
+
+```{r,echo=FALSE,include=FALSE}
+## Read the datatset and load the necessary packages
+library(plyr)
+library(dplyr)
+library(ggmap)
+library(ggplot2)
+library(gganimate)
+EQ=read.csv("eq.csv",stringsAsFactors = FALSE)
+names(EQ)
+## Only Select the data with magnitude greater than or equal to 7.
+EQ<-EQ%>%filter(Magnitude>=7)
+
+```
+
+##Split the Date into year,month and date##
+
+This is done in order ot get the frame which is important for the plot. In other words,
+The core of the approach is to treat *frame* (as in, the time point within an animation) as another aesthetic, just like x, y, size, color, or so on. Thus, a variable in your data can be mapped to frame just as others are mapped to x or y.
+
+```{}
+## Convert the dates into character in order to split the coloumn into "dd" "mm" "yy"" columns
+EQ$Date<-as.character(EQ$Date)
+
+## Split the date and create a list for the same
+
+list<-strsplit(EQ$Date,"-")
+
+## Convert the list into dataframe
+library(plyr)
+EQ_Date1<-ldply(list)
+colnames(EQ_Date1)<-c("Day","Month","Year")
+
+## Column bind with the main dataframe
+EQ<-cbind(EQ,EQ_Date1)
+names(EQ)
+## Change the Date to numeric
+EQ$Year=as.numeric(EQ$Year)
+
+## Get the world map for plot and load the necessary package
+library(ggmap)
+world<-map_data("world")
+
+## Remove the antartica region from the world map
+
+world <- world[world$region != "Antarctica",]
+map<-ggplot()+geom_map(data=world,map=world,aes(x=long,y=lat,map_id=region),color='#333300',fill='#663300')
+
+#Plot points on world Map
+
+p <- map + geom_point(data = EQ, aes(x = Longitude, y = Latitude, 
+                                             frame = Year, 
+                                            cumulative = TRUE,size=EQ$Magnitude), alpha = 0.3, 
+                      size = 2.5,color="#336600")+
+  geom_jitter(width = 0.1) +labs(title = "Earthquake above 7 point on richter scale")+theme_void()
+
+# Plot .gif file using gganimate function
+
+gganimate(p)
+
+```
+
+
+![Earthquake](C:/Users/ACER PC/Documents/R_Projects/earthquake.gif.gif)
+
+
+
+##Speed up projection in .gif using animation package##
+
+As we can see that plot has too many years from 1965 to 2016. Thus, in order to speed up the visual we can use the animation package to fast forward using ani.option()
+
+```{}
+library(animation)
+ani.options(interval=0.15)
+gganimate(p)
+```
+
+![Earthquake_1.5x](C:/Users/ACER PC/Documents/R_Projects/earthquakespeedup.gif.gif)
+
+
+
+
+##Conclusion
+
+This article was an introductory tutorial to the world of animated map.Readers can try this and apply the same in other projects. Some of the example are,
+
+* The same technology can be used to compare the heat map for the weather data across nation
+
+* Flood or other natural disaster in a particular location over a period of time.
+
+* Can be used to see the growth of metro in city using delaunay triangle. Please see the interesting article posted by Page Piccinini in **r-Bloggers**, [Metro Systems over Time](https://www.r-bloggers.com/metro-systems-over-time-part-1/) or you can directly access her page from her official site [Page Piccinin](https://pagepiccinini.com/2016/09/27/metro-systems-over-time/).
+
+
